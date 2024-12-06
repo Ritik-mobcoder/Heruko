@@ -5,42 +5,45 @@ from fastapi import FastAPI, Request, HTTPException, Query
 
 app = FastAPI()
 def database():
-    try:
-        load_dotenv()
-        connection = psycopg2.connect(
-            database=os.getenv("database"),
-            user=os.getenv("user"),
-            password=os.getenv("password"),
-            host=os.getenv("host"),
-            port=os.getenv("port"),
-        )
-        return connection
-    except Exception as e:
-        return ("An Error Occured in Db connection", e)
+    # try:
+    load_dotenv() 
+    connection = psycopg2.connect(
+        database=os.getenv("database"),
+        user=os.getenv("user"),
+        password=os.getenv("password"),
+        host=os.getenv("host"),
+        port=os.getenv("port"),
+    )
+    return connection
+    # except Exception as e:
+    #     print("An error occurred in Db connection:", e)
+    #     return None  
 
-
-@app.get("/hello")
+@app.get("/data-get")
 async def res():
+    connection = database()
+    
+    if connection is None:
+        return {"responseMessage": "Database connection failed", "responseCode": 500}
     try:
-        connection = database()
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM student order by id asc")
+        print("Ritik")
+        cursor.execute("SELECT * FROM student ORDER BY id ASC")
         records = cursor.fetchall()
-        print("Records", records)
-        response_data = {"resposeMessage": 1, "responseCode": 200, "data": records}
+        cursor.close()  
+        response_data = {"responseMessage": "Success", "responseCode": 200, "data": records}
         return response_data
     except Exception as e:
-        error_message = e
-        response_data = {
-            "resposeMessage": 0,
-            "responseCode": 400,
-            "data": [],
-            "error": error_message,
-        }
-        return response_data
+        return {"responseMessage": str(e), "responseCode": 500}
     finally:
-        cursor.close()
-        connection.close()
+        if connection:
+            connection.close() 
+
+@app.get("/")
+def read_root():
+    print("Hello from Ritik")
+    return {"message": "Hello, Ritik gupta"}
+    
 
 
 @app.post("/data-insert")
